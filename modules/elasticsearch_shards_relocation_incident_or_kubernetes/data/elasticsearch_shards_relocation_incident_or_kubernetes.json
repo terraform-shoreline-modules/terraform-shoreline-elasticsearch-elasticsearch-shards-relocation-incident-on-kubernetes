@@ -1,0 +1,162 @@
+{
+  "name": "elasticsearch_shards_relocation_incident_or_kubernetes",
+  "description": "Elasticsearch shards relocation is an incident type that occurs when Elasticsearch is moving its data shards from one node to another, which could cause temporary unavailability of data or increase in query latency. This may happen due to various reasons like node failure, hardware maintenance, or rebalancing of data.",
+  "params": [
+    {
+      "name": "LABEL_SELECTOR",
+      "value": ""
+    },
+    {
+      "name": "ELASTICSEARCH_DEPLOYMENT_NAME",
+      "value": ""
+    },
+    {
+      "name": "ELASTICSEARCH_POD_NAME",
+      "value": ""
+    },
+    {
+      "name": "ELASTICSEARCH_ENDPOINT",
+      "value": ""
+    },
+    {
+      "name": "ELASTICSEARCH_NAMESPACE",
+      "value": ""
+    },
+    {
+      "name": "K8S_CLUSTER_NAME",
+      "value": ""
+    },
+    {
+      "name": "NAMESPACE",
+      "value": ""
+    }
+  ],
+  "cells": [
+    {
+      "name": "cell_1",
+      "type": "MARKDOWN",
+      "enabled": true,
+      "content": "## Elasticsearch shards relocation Incident or Kubernetes.\nElasticsearch shards relocation is an incident type that occurs when Elasticsearch is moving its data shards from one node to another, which could cause temporary unavailability of data or increase in query latency. This may happen due to various reasons like node failure, hardware maintenance, or rebalancing of data."
+    },
+    {
+      "name": "cell_2",
+      "type": "MARKDOWN",
+      "enabled": true,
+      "content": "## Check if the Elasticsearch pod is running"
+    },
+    {
+      "name": "cell_3",
+      "type": "OP_LANG",
+      "enabled": true,
+      "content": "pod | k8s_cluster_name=$K8S_CLUSTER_NAME | app='shoreline' | limit=1 | random=1 | `kubectl get pods -n ${ELASTICSEARCH_NAMESPACE} -l ${LABEL_SELECTOR}`"
+    },
+    {
+      "name": "cell_4",
+      "type": "MARKDOWN",
+      "enabled": true,
+      "content": "## Check the logs of the Elasticsearch pod to see if there are any error messages related to shards relocation"
+    },
+    {
+      "name": "cell_5",
+      "type": "OP_LANG",
+      "enabled": true,
+      "content": "pod | k8s_cluster_name=$K8S_CLUSTER_NAME | app='shoreline' | limit=1 | random=1 | `kubectl logs ${ELASTICSEARCH_POD_NAME} -n ${ELASTICSEARCH_NAMESPACE}`"
+    },
+    {
+      "name": "cell_6",
+      "type": "MARKDOWN",
+      "enabled": true,
+      "content": "## Check if the Elasticsearch cluster is healthy"
+    },
+    {
+      "name": "cell_7",
+      "type": "OP_LANG",
+      "enabled": true,
+      "content": "pod | k8s_cluster_name=$K8S_CLUSTER_NAME | namespace=$NAMESPACE | `kubectl exec -it ${ELASTICSEARCH_POD_NAME} -n ${ELASTICSEARCH_NAMESPACE} curl -X GET \"http://localhost:9200/_cluster/health\"`"
+    },
+    {
+      "name": "cell_8",
+      "type": "MARKDOWN",
+      "enabled": true,
+      "content": "## Check the status of all Elasticsearch indices"
+    },
+    {
+      "name": "cell_9",
+      "type": "OP_LANG",
+      "enabled": true,
+      "content": "pod | k8s_cluster_name=$K8S_CLUSTER_NAME | namespace=$NAMESPACE | `kubectl exec -it ${ELASTICSEARCH_POD_NAME} -n ${ELASTICSEARCH_NAMESPACE} curl -X GET \"http://localhost:9200/_cat/indices\"`"
+    },
+    {
+      "name": "cell_10",
+      "type": "MARKDOWN",
+      "enabled": true,
+      "content": "## Check the status of all Elasticsearch shards"
+    },
+    {
+      "name": "cell_11",
+      "type": "OP_LANG",
+      "enabled": true,
+      "content": "pod | k8s_cluster_name=$K8S_CLUSTER_NAME | namespace=$NAMESPACE | `kubectl exec -it ${ELASTICSEARCH_POD_NAME} -n ${ELASTICSEARCH_NAMESPACE} curl -X GET \"http://localhost:9200/_cat/shards\"`"
+    },
+    {
+      "name": "cell_12",
+      "type": "MARKDOWN",
+      "enabled": true,
+      "content": "## Check the status of the Elasticsearch nodes"
+    },
+    {
+      "name": "cell_13",
+      "type": "OP_LANG",
+      "enabled": true,
+      "content": "pod | k8s_cluster_name=$K8S_CLUSTER_NAME | namespace=$NAMESPACE | `kubectl exec -it ${ELASTICSEARCH_POD_NAME} -n ${ELASTICSEARCH_NAMESPACE} curl -X GET \"http://localhost:9200/_cat/nodes\"`"
+    },
+    {
+      "name": "cell_14",
+      "type": "MARKDOWN",
+      "enabled": true,
+      "content": "## A node failure or shutdown can trigger Elasticsearch to relocate shards from the affected node to other nodes in the cluster."
+    },
+    {
+      "name": "cell_15",
+      "type": "OP_LANG",
+      "enabled": true,
+      "content": "pod | k8s_cluster_name=$K8S_CLUSTER_NAME | app='shoreline' | random=1 | limit=1 | invoke_elasticsearch_shards_relocation($ELASTICSEARCH_DEPLOYMENT_NAME, $ELASTICSEARCH_NAMESPACE, $NAMESPACE)"
+    },
+    {
+      "name": "cell_16",
+      "type": "MARKDOWN",
+      "enabled": true,
+      "content": "## Rebalancing of data across the cluster due to node addition or removal can trigger Elasticsearch to relocate shards from one node to another."
+    },
+    {
+      "name": "cell_17",
+      "type": "OP_LANG",
+      "enabled": true,
+      "content": "pod | k8s_cluster_name=$K8S_CLUSTER_NAME | app='shoreline' | random=1 | limit=1 | invoke_es_scaling_check($ELASTICSEARCH_DEPLOYMENT_NAME, $ELASTICSEARCH_NAMESPACE, $NAMESPACE)"
+    },
+    {
+      "name": "cell_18",
+      "type": "MARKDOWN",
+      "enabled": true,
+      "content": "## Check the Elasticsearch logs to identify the reason for shard relocation and the status of the relocation process."
+    },
+    {
+      "name": "cell_19",
+      "type": "OP_LANG",
+      "enabled": true,
+      "content": "pod | k8s_cluster_name=$K8S_CLUSTER_NAME | app='shoreline' | random=1 | limit=1 | invoke_elasticsearch_relocation_check($LABEL_SELECTOR, $ELASTICSEARCH_ENDPOINT)"
+    },
+    {
+      "name": "cell_20",
+      "type": "MARKDOWN",
+      "enabled": true,
+      "content": "## Rebalance the shards manually or use Elasticsearch's auto-rebalancing feature to redistribute the shards evenly across the cluster nodes."
+    },
+    {
+      "name": "cell_21",
+      "type": "OP_LANG",
+      "enabled": true,
+      "content": "pod | k8s_cluster_name=$K8S_CLUSTER_NAME | app='shoreline' | random=1 | limit=1 | invoke_rebalance_elasticsearch($ELASTICSEARCH_DEPLOYMENT_NAME, $ELASTICSEARCH_NAMESPACE, $NAMESPACE)"
+    }
+  ]
+}
